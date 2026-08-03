@@ -3,7 +3,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/bouda/laravel-make-pattern.svg?style=flat-square)](https://packagist.org/packages/bouda/laravel-make-pattern)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Bouda-Bissari/laravel-make-pattern/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/Bouda-Bissari/laravel-make-pattern/actions)
 [![Total Downloads](https://img.shields.io/packagist/dt/bouda/laravel-make-pattern.svg?style=flat-square)](https://packagist.org/packages/bouda/laravel-make-pattern)
-[![License](https://img.shields.io/packagist/l/bouda/laravel-make-pattern.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 Generate a full CRUD scaffold — Model, Repository (+ interface), Service, Controller, Form Requests, API Resource, Policy, and a Feature test — from a single Artisan command.
 
