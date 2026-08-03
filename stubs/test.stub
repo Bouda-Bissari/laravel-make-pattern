@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class {{ class }} extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_it_can_list_{{ entityTable }}(): void
+    {
+        $response = $this->getJson('/api/{{ entityTable }}');
+
+        $response->assertStatus(200);
+    }
+}

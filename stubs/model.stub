@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
+
+class {{ class }} extends Model
+{
+    use HasUlids;
+
+    protected $table = '{{ entityTable }}';
+
+    protected $fillable = [
+        //
+    ];
+}

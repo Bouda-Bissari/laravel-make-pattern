@@ -1,0 +1,38 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Repositories\Contracts\{{ entity }}RepositoryInterface;
+
+class {{ class }}
+{
+    public function __construct(
+        protected {{ entity }}RepositoryInterface ${{ entityVariable }}Repository
+    ) {
+    }
+
+    public function list()
+    {
+        return $this->{{ entityVariable }}Repository->all();
+    }
+
+    public function find(string $id)
+    {
+        return $this->{{ entityVariable }}Repository->find($id);
+    }
+
+    public function create(array $data)
+    {
+        return $this->{{ entityVariable }}Repository->create($data);
+    }
+
+    public function update(string $id, array $data)
+    {
+        return $this->{{ entityVariable }}Repository->update($id, $data);
+    }
+
+    public function delete(string $id): bool
+    {
+        return $this->{{ entityVariable }}Repository->delete($id);
+    }
+}

@@ -1,0 +1,69 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Models\{{ entity }};
+use {{ namespace }}\Contracts\{{ entity }}RepositoryInterface;
+use Illuminate\Support\Facades\Log;
+
+class {{ class }} implements {{ entity }}RepositoryInterface
+{
+    public function all()
+    {
+        return {{ entity }}::all();
+    }
+
+    public function find(string $id)
+    {
+        return {{ entity }}::findOrFail($id);
+    }
+
+    public function create(array $data)
+    {
+        try {
+            return {{ entity }}::create($data);
+        } catch (\Throwable $e) {
+            Log::error('{{ entity }}Repository::create failed', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data,
+            ]);
+
+            throw $e;
+        }
+    }
+
+    public function update(string $id, array $data)
+    {
+        try {
+            ${{ entityVariable }} = $this->find($id);
+            ${{ entityVariable }}->update($data);
+
+            return ${{ entityVariable }};
+        } catch (\Throwable $e) {
+            Log::error('{{ entity }}Repository::update failed', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'id' => $id,
+                'data' => $data,
+            ]);
+
+            throw $e;
+        }
+    }
+
+    public function delete(string $id): bool
+    {
+        try {
+            return (bool) $this->find($id)->delete();
+        } catch (\Throwable $e) {
+            Log::error('{{ entity }}Repository::delete failed', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'id' => $id,
+            ]);
+
+            throw $e;
+        }
+    }
+}

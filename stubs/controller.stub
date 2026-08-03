@@ -1,0 +1,46 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Requests\{{ entity }}StoreRequest;
+use App\Http\Requests\{{ entity }}UpdateRequest;
+use App\Http\Resources\{{ entity }}Resource;
+use App\Services\{{ entity }}Service;
+
+class {{ class }}
+{
+    public function __construct(protected {{ entity }}Service ${{ entityVariable }}Service)
+    {
+    }
+
+    public function index()
+    {
+        return {{ entity }}Resource::collection($this->{{ entityVariable }}Service->list());
+    }
+
+    public function store({{ entity }}StoreRequest $request)
+    {
+        $model = $this->{{ entityVariable }}Service->create($request->validated());
+
+        return new {{ entity }}Resource($model);
+    }
+
+    public function show(string $id)
+    {
+        return new {{ entity }}Resource($this->{{ entityVariable }}Service->find($id));
+    }
+
+    public function update({{ entity }}UpdateRequest $request, string $id)
+    {
+        $model = $this->{{ entityVariable }}Service->update($id, $request->validated());
+
+        return new {{ entity }}Resource($model);
+    }
+
+    public function destroy(string $id)
+    {
+        $this->{{ entityVariable }}Service->delete($id);
+
+        return response()->noContent();
+    }
+}

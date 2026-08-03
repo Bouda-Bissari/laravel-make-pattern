@@ -1,0 +1,30 @@
+{
+    "name": "bouda/laravel-make-pattern",
+    "description": "Generate a full CRUD scaffold (Model, Repository, Service, Controller, Requests, Resource, Policy, Test) from a single Artisan command.",
+    "license": "MIT",
+    "keywords": ["laravel", "artisan", "scaffolding", "crud", "generator", "repository-pattern"],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": { "Bouda\\MakePattern\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Bouda\\MakePattern\\Tests\\": "tests/" }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["Bouda\\MakePattern\\MakePatternServiceProvider"]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    }
+}
