@@ -22,7 +22,7 @@ class MakePatternHistoryCommand extends Command
         }
 
         $this->table(
-            ['ID', 'Entité', 'Date', 'Nb fichiers'],
+            ['ID', 'Entity', 'Date', 'Files'],
             array_map(fn (array $entry) => [
                 $entry['id'],
                 $entry['entity'],

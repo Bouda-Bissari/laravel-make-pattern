@@ -1,33 +1,33 @@
 # Changelog
 
-Toutes les modifications notables de ce projet seront documentées dans ce fichier.
+All notable changes to this project will be documented in this file.
 
-Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et ce projet respecte [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [v0.2.0] - 2026-08-05
 
-### Ajouté
-- Option `--domain=<name>` : génère toutes les couches sous `app/Domain/{name}/` avec les namespaces correspondants (`App\Domain\{name}\Models`, etc.) — support DDD natif.
-- Option `--namespace=<name>` : remplace le namespace racine `App` par la valeur fournie dans tous les fichiers générés. Compatible avec `--domain`.
-- Variable de stub `{{ modelNamespace }}` : remplace les imports de Model codés en dur par un placeholder dynamique dans tous les stubs (repository, policy, etc.).
-- Variable de stub `{{ domainNamespace }}` : namespace racine de toutes les couches du run (ex: `App\Domain\Blog`), utilisée dans controller et service stubs.
-- Tests unitaires : `StubReplacerTest` (6 cas), `FileGeneratorTest` (5 cas) — couverture des options domain/namespace.
-- Support Laravel 13 en CI (testbench `^11.0`), avec exclusion PHP 8.2 × Laravel 13 (incompatibles).
+### Added
+- `--domain=<name>` option: generates all layers under `app/Domain/{name}/` with the matching namespaces (`App\Domain\{name}\Models`, etc.) — native DDD support.
+- `--namespace=<name>` option: overrides the root namespace globally (default: `App`). Compatible with `--domain`.
+- Stub variable `{{ modelNamespace }}`: replaces hardcoded `App\Models` imports with a dynamic placeholder across all stubs (repository, policy, etc.).
+- Stub variable `{{ domainNamespace }}`: the root namespace prefix for all layers in a given run (e.g. `App\Domain\Blog`), used in controller and service stubs.
+- Unit tests: `StubReplacerTest` (6 cases) and `FileGeneratorTest` (5 cases) covering the new domain/namespace options.
+- Laravel 13 support in CI (testbench `^11.0`); PHP 8.2 × Laravel 13 excluded (L13 requires PHP 8.3+).
 
-### Modifié
-- Tous les stubs (`repository`, `policy`, `service`, `controller`, `repository-with-logging`) utilisent désormais des variables dynamiques au lieu de `App\` en dur.
-- Suite de tests reorganisée en deux suites PHPUnit : `Unit` et `Feature`.
+### Changed
+- All stubs (`repository`, `policy`, `service`, `controller`, `repository-with-logging`) now use dynamic stub variables instead of hardcoded `App\`.
+- Test suite split into two PHPUnit suites: `Unit` and `Feature`.
 
-### Supprimé
-- Support Laravel 10 retiré de la CI et du `composer.json` (Laravel 10 est en fin de vie).
+### Removed
+- Laravel 10 dropped from CI matrix and `composer.json` (Laravel 10 is end-of-life).
 
 ## [v0.1.0] - 2026-08-03
 
-### Ajouté
-- Command `make:pattern` : génère un CRUD complet (Model, Repository + interface, Service, Controller, Form Requests, API Resource, Policy, Feature test) depuis une seule commande Archeur.
-- Option `--only=` pour sélectionner les couches à générer.
-- Option `--force` pour écraser les fichiers existants.
-- Command `make:pattern:undo` : annule le dernier run ; option `--id=` pour viser un run précis, avec alerte si un fichier a été modifié depuis sa génération.
-- Command `make:pattern:history` : liste l'historique des générations (append-only dans `storage/app/make-pattern/history.json`).
-- Logging via la façade `Log` (info/warning/error), avec canal dédié `make-pattern` si configuré dans l'app hôte, sinon fallback sur le canal par défaut.
-- Option de config `wrap_repository_calls` (booléen, `false` par défaut) : enveloppe les appels `create`/`update`/`delete` du Repository dans un `try/catch` qui log et ré-émet les exceptions (stub `repository-with-logging`).
+### Added
+- `make:pattern` command: generates a full CRUD scaffold (Model, Repository + interface, Service, Controller, Form Requests, API Resource, Policy, Feature test) from a single Artisan command.
+- `--only=` option to limit generation to specific layers.
+- `--force` option to overwrite already existing files.
+- `make:pattern:undo` command: rolls back the last run; `--id=` option targets a specific run and warns when a file has been modified since it was generated.
+- `make:pattern:history` command: lists the generation history (append-only log at `storage/app/make-pattern/history.json`).
+- Logging through the `Log` facade (info / warning / error), with an opt-in `make-pattern` channel when defined in the host app, falling back to the default channel.
+- `wrap_repository_calls` config option (boolean, default `false`): wraps `create` / `update` / `delete` repository calls in a try/catch that logs before rethrowing (uses the `repository-with-logging` stub).
