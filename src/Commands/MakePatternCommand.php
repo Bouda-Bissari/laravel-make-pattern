@@ -14,14 +14,18 @@ class MakePatternCommand extends Command
     protected $signature = 'make:pattern
         {name : The entity name, e.g. Post}
         {--only= : Comma-separated list of layers to generate (default: all enabled in config)}
+        {--domain= : Place all layers under app/Domain/{domain}/ (DDD style)}
+        {--namespace= : Override the root namespace (default: App)}
         {--force : Overwrite files that already exist}';
 
     protected $description = 'Generate a full CRUD scaffold (Model, Repository, Service, Controller, Requests, Resource, Policy, Test) from a single command.';
 
     public function handle(FileGenerator $generator, GenerationLog $log): int
     {
-        $name = $this->argument('name');
-        $layers = config('make-pattern.layers', []);
+        $name      = $this->argument('name');
+        $domain    = $this->option('domain') ?: null;
+        $namespace = $this->option('namespace') ?: null;
+        $layers    = config('make-pattern.layers', []);
 
         if ($only = $this->option('only')) {
             $wanted = array_map('trim', explode(',', $only));
@@ -32,10 +36,12 @@ class MakePatternCommand extends Command
         $force = (bool) $this->option('force');
 
         MakePatternLogger::info('Starting make:pattern generation', [
-            'run_id' => $runId,
-            'entity' => $name,
-            'layers' => array_keys(array_filter($layers, fn ($layer) => $layer['enabled'] ?? true)),
-            'force' => $force,
+            'run_id'    => $runId,
+            'entity'    => $name,
+            'domain'    => $domain,
+            'namespace' => $namespace,
+            'layers'    => array_keys(array_filter($layers, fn ($layer) => $layer['enabled'] ?? true)),
+            'force'     => $force,
         ]);
 
         $createdFiles = [];
@@ -62,7 +68,7 @@ class MakePatternCommand extends Command
             }
 
             try {
-                $path = $generator->generate($name, $layerConfig, $stubPath, $force);
+                $path = $generator->generate($name, $layerConfig, $stubPath, $force, $domain, $namespace);
 
                 if ($path === null) {
                     $message = "Skipping layer [{$layerKey}] (already exists, use --force)";

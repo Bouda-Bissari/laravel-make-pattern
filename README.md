@@ -38,7 +38,7 @@ It targets a specific gap: existing Laravel scaffolders are either too minimal (
 ## Requirements
 
 - PHP 8.2+
-- Laravel 10.x or 11.x
+- Laravel 11.x, 12.x, or 13.x (PHP 8.3+ required for Laravel 13)
 
 ## Installation
 
@@ -114,7 +114,45 @@ class PostRepository implements PostRepositoryInterface
 | Option | Description |
 |---|---|
 | `--only=model,service` | Only generate the specified layers |
+| `--domain=Blog` | Generate all layers under `app/Domain/Blog/` (DDD style) |
+| `--namespace=Acme` | Override the root namespace (default: `App`) |
 | `--force` | Overwrite files that already exist |
+
+### DDD / Domain mode
+
+Use `--domain` to group all layers under a domain folder:
+
+```bash
+php artisan make:pattern Post --domain=Blog
+```
+
+Generates:
+
+```
+app/Domain/Blog/Models/Post.php
+app/Domain/Blog/Repositories/Contracts/PostRepositoryInterface.php
+app/Domain/Blog/Repositories/PostRepository.php
+app/Domain/Blog/Services/PostService.php
+app/Domain/Blog/Http/Controllers/PostController.php
+...
+```
+
+All namespaces follow the same pattern — `App\Domain\Blog\Models`, `App\Domain\Blog\Services`, etc.
+
+### Custom root namespace
+
+For projects that don't use `App\` as their root namespace:
+
+```bash
+php artisan make:pattern Post --namespace=Acme
+```
+
+Generates files under `acme/` with `Acme\Models`, `Acme\Services`, etc. Combine with `--domain`:
+
+```bash
+php artisan make:pattern Post --domain=Blog --namespace=Acme
+# => Acme\Domain\Blog\Models\Post
+```
 
 ## Configuration
 

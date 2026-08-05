@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use App\Models\{{ entity }};
+use {{ modelNamespace }}\{{ entity }};
 use {{ namespace }}\Contracts\{{ entity }}RepositoryInterface;
 
 class {{ class }} implements {{ entity }}RepositoryInterface

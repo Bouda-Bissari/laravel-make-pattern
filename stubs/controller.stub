@@ -2,10 +2,10 @@
 
 namespace {{ namespace }};
 
-use App\Http\Requests\{{ entity }}StoreRequest;
-use App\Http\Requests\{{ entity }}UpdateRequest;
-use App\Http\Resources\{{ entity }}Resource;
-use App\Services\{{ entity }}Service;
+use {{ domainNamespace }}\Http\Requests\{{ entity }}StoreRequest;
+use {{ domainNamespace }}\Http\Requests\{{ entity }}UpdateRequest;
+use {{ domainNamespace }}\Http\Resources\{{ entity }}Resource;
+use {{ domainNamespace }}\Services\{{ entity }}Service;
 
 class {{ class }}
 {

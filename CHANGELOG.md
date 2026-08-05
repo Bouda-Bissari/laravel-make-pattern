@@ -4,6 +4,23 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et ce projet respecte [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-08-05
+
+### Ajouté
+- Option `--domain=<name>` : génère toutes les couches sous `app/Domain/{name}/` avec les namespaces correspondants (`App\Domain\{name}\Models`, etc.) — support DDD natif.
+- Option `--namespace=<name>` : remplace le namespace racine `App` par la valeur fournie dans tous les fichiers générés. Compatible avec `--domain`.
+- Variable de stub `{{ modelNamespace }}` : remplace les imports de Model codés en dur par un placeholder dynamique dans tous les stubs (repository, policy, etc.).
+- Variable de stub `{{ domainNamespace }}` : namespace racine de toutes les couches du run (ex: `App\Domain\Blog`), utilisée dans controller et service stubs.
+- Tests unitaires : `StubReplacerTest` (6 cas), `FileGeneratorTest` (5 cas) — couverture des options domain/namespace.
+- Support Laravel 13 en CI (testbench `^11.0`), avec exclusion PHP 8.2 × Laravel 13 (incompatibles).
+
+### Modifié
+- Tous les stubs (`repository`, `policy`, `service`, `controller`, `repository-with-logging`) utilisent désormais des variables dynamiques au lieu de `App\` en dur.
+- Suite de tests reorganisée en deux suites PHPUnit : `Unit` et `Feature`.
+
+### Supprimé
+- Support Laravel 10 retiré de la CI et du `composer.json` (Laravel 10 est en fin de vie).
+
 ## [v0.1.0] - 2026-08-03
 
 ### Ajouté

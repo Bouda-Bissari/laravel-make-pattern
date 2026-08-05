@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use App\Repositories\Contracts\{{ entity }}RepositoryInterface;
+use {{ domainNamespace }}\Repositories\Contracts\{{ entity }}RepositoryInterface;
 
 class {{ class }}
 {
