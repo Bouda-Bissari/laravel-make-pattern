@@ -5,13 +5,13 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/bouda/laravel-make-pattern.svg?style=flat-square)](https://packagist.org/packages/bouda/laravel-make-pattern)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-Generate a full CRUD scaffold — Model, Repository (+ interface), Service, Controller, Form Requests, API Resource, Policy, and a Feature test — from a single Artisan command.
+Generate a complete, **working** CRUD scaffold from one Artisan command — Model, Migration, Factory, Repository (+ interface), Service, Controller, Form Requests, API Resource, Policy and a Feature test, wired together with a container binding and a route.
 
 ```bash
 php artisan make:pattern Post
 ```
 
-turns into nine consistent, ready-to-edit files, generated from stubs you fully control.
+The generated test passes immediately, because the scaffold is connected: the repository interface is bound in the container, the policy is registered, and the controller is routed.
 
 ## Table of contents
 
@@ -19,10 +19,16 @@ turns into nine consistent, ready-to-edit files, generated from stubs you fully 
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+- [What gets generated](#what-gets-generated)
+- [Options](#options)
+- [Domain (DDD) mode](#domain-ddd-mode)
+- [Custom root namespace](#custom-root-namespace)
 - [Configuration](#configuration)
-- [Generation history & rollback](#generation-history--rollback)
+- [Overriding the stubs](#overriding-the-stubs)
+- [History, undo and backups](#history-undo-and-backups)
 - [Logging](#logging)
 - [Testing](#testing)
+- [Upgrading from 0.2](#upgrading-from-02)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -31,9 +37,12 @@ turns into nine consistent, ready-to-edit files, generated from stubs you fully 
 
 ## Why
 
-Writing the same repository/service/controller boilerplate for every resource gets old fast, and copy-pasting an existing module invites drift between resources. This package generates all the layers consistently, from stubs you own — no npm-package-style versioning overhead, no opinionated abstraction you can't see or change.
+Writing the same repository/service/controller boilerplate for every resource gets old fast, and copy-pasting an existing module invites drift between resources.
 
-It targets a specific gap: existing Laravel scaffolders are either too minimal (model + migration only) or hard-code an architecture you may not use. Here, every layer is config-driven — disable what you don't need, override any stub, and the generator adapts to your project's conventions instead of the other way around.
+Most Laravel scaffolders are either too minimal (model + migration) or hard-code an architecture you may not use. Two things make this one different:
+
+- **The output runs.** Generating a `PostService` that type-hints `PostRepositoryInterface` is useless if nothing binds the interface — you get a `BindingResolutionException` on the first request. This package maintains the binding, the policy registration and the route for you.
+- **Every layer is config-driven.** Disable what you don't need, override any stub, point a layer at a different namespace. The generator adapts to your conventions instead of the other way around.
 
 ## Requirements
 
@@ -48,19 +57,15 @@ composer require bouda/laravel-make-pattern
 
 The service provider is auto-discovered — nothing to register manually.
 
-Publish the config if your app doesn't follow the default folder conventions:
-
 ```bash
+# Only if your app doesn't follow the default folder conventions
 php artisan vendor:publish --tag=make-pattern-config
-```
 
-Publish the stubs if you want to override the generated code's structure:
-
-```bash
+# Only if you want to change the shape of the generated code
 php artisan vendor:publish --tag=make-pattern-stubs
 ```
 
-Any stub you publish takes priority over the package's built-in one, so you can override a single layer (e.g. just the Controller) without touching the rest.
+On Laravel 11+, `routes/api.php` doesn't exist until you run `php artisan install:api`. Run it **before** generating: `install:api` silently refuses to wire the file into `bootstrap/app.php` if it already exists, so the generator deliberately never creates it — it tells you to run `install:api` and skips route registration instead. Everything else is still generated.
 
 ## Usage
 
@@ -68,9 +73,15 @@ Any stub you publish takes priority over the package's built-in one, so you can 
 php artisan make:pattern Post
 ```
 
-Generates:
+Preview without writing anything:
 
+```bash
+php artisan make:pattern Post --dry-run
 ```
+
+## What gets generated
+
+```text
 app/Models/Post.php
 app/Repositories/Contracts/PostRepositoryInterface.php
 app/Repositories/PostRepository.php
@@ -80,74 +91,90 @@ app/Http/Requests/PostStoreRequest.php
 app/Http/Requests/PostUpdateRequest.php
 app/Http/Resources/PostResource.php
 app/Policies/PostPolicy.php
+app/Providers/PatternServiceProvider.php     ← created once, appended to afterwards
+database/migrations/2026_08_30_101500_create_posts_table.php
+database/factories/PostFactory.php
 tests/Feature/PostTest.php
 ```
 
-For example, the generated repository looks like this:
+Plus two idempotent edits:
+
+- `routes/api.php` — `Route::apiResource('posts', PostController::class);`
+- `bootstrap/providers.php` — registers `PatternServiceProvider`
+
+`PatternServiceProvider` is the piece that makes the scaffold work. It accumulates one entry per entity:
 
 ```php
-<?php
+protected array $repositories = [
+    \App\Repositories\Contracts\PostRepositoryInterface::class => \App\Repositories\PostRepository::class,
+    // make-pattern:repositories
+];
 
-namespace App\Repositories;
-
-use App\Models\Post;
-use App\Repositories\Contracts\PostRepositoryInterface;
-
-class PostRepository implements PostRepositoryInterface
-{
-    public function all()
-    {
-        return Post::all();
-    }
-
-    public function find(string $id)
-    {
-        return Post::findOrFail($id);
-    }
-
-    // ...
-}
+protected array $policies = [
+    \App\Models\Post::class => \App\Policies\PostPolicy::class,
+    // make-pattern:policies
+];
 ```
 
-### Options
+New entries are inserted above the marker comments. The rest of the file is yours — running the command again never duplicates an entry or overwrites your edits.
+
+## Options
 
 | Option | Description |
-|---|---|
-| `--only=model,service` | Only generate the specified layers |
-| `--domain=Blog` | Generate all layers under `app/Domain/Blog/` (DDD style) |
+| --- | --- |
+| `--only=model,service` | Generate only these layers |
+| `--except=test,migration` | Generate everything except these layers |
+| `--domain=Blog` | Group all layers under a domain (DDD style) |
 | `--namespace=Acme` | Override the root namespace (default: `App`) |
-| `--force` | Overwrite files that already exist |
+| `--path=src` | Directory the overridden root namespace maps to |
+| `--force` | Overwrite existing files (the originals are backed up) |
+| `--dry-run` | Print what would be written, write nothing |
 
-### DDD / Domain mode
+An unknown layer name is an error, not a silent no-op. Valid layer names are the keys of the `layers` array in the config: `model`, `migration`, `factory`, `repository_interface`, `repository`, `service`, `controller`, `store_request`, `update_request`, `resource`, `policy`, `test`.
 
-Use `--domain` to group all layers under a domain folder:
+## Domain (DDD) mode
 
 ```bash
 php artisan make:pattern Post --domain=Blog
 ```
 
-Generates:
-
-```
+```text
 app/Domain/Blog/Models/Post.php
 app/Domain/Blog/Repositories/Contracts/PostRepositoryInterface.php
 app/Domain/Blog/Repositories/PostRepository.php
 app/Domain/Blog/Services/PostService.php
 app/Domain/Blog/Http/Controllers/PostController.php
-...
+app/Domain/Blog/Http/Requests/PostStoreRequest.php
+app/Domain/Blog/Http/Resources/PostResource.php
+app/Domain/Blog/Policies/PostPolicy.php
+tests/Feature/Blog/PostTest.php
+database/factories/Blog/PostFactory.php
+database/migrations/..._create_posts_table.php   ← migrations stay global
 ```
 
-All namespaces follow the same pattern — `App\Domain\Blog\Models`, `App\Domain\Blog\Services`, etc.
+Each layer's directory is derived from its namespace, so path and namespace can never drift apart: everything stays PSR-4 autoloadable.
 
-### Custom root namespace
+Two details that matter in domain mode, and that the generator handles for you:
 
-For projects that don't use `App\` as their root namespace:
+- **Policies** are registered explicitly in `PatternServiceProvider`, because Laravel's auto-discovery only looks for `App\Policies\PostPolicy` next to `App\Models\Post`.
+- **Factories** are bound with a `newFactory()` method on the model, because factory discovery is convention-based too.
+
+Rename the `Domain` segment (or drop it) in the config:
+
+```php
+'domain' => ['segment' => 'Modules'],   // App\Modules\Blog\Services
+```
+
+## Custom root namespace
 
 ```bash
-php artisan make:pattern Post --namespace=Acme
+php artisan make:pattern Post --namespace=Acme --path=src
+# => src/Models/Post.php with namespace Acme\Models
 ```
 
-Generates files under `acme/` with `Acme\Models`, `Acme\Services`, etc. Combine with `--domain`:
+`--path` defaults to a lowercased mirror of the namespace (`Acme` → `acme/`). Only the **primary** root moves; `Tests\` and `Database\Factories\` stay where they are. The command reminds you to add the namespace to the `psr-4` map in `composer.json`.
+
+Combine with `--domain`:
 
 ```bash
 php artisan make:pattern Post --domain=Blog --namespace=Acme
@@ -156,58 +183,110 @@ php artisan make:pattern Post --domain=Blog --namespace=Acme
 
 ## Configuration
 
-Published to `config/make-pattern.php`:
+Published to `config/make-pattern.php`.
+
+### Roots
+
+Every layer namespace sits under a PSR-4 root. This is what keeps paths and namespaces in sync.
+
+```php
+'roots' => [
+    'App' => ['path' => app_path(), 'domain' => 'prefix', 'primary' => true],
+    'Tests' => ['path' => base_path('tests'), 'domain' => 'suffix'],
+    'Database\\Factories' => ['path' => database_path('factories'), 'domain' => 'suffix'],
+],
+```
+
+| Key | Meaning |
+| --- | --- |
+| `path` | The directory this namespace maps to in `composer.json` |
+| `domain` | `prefix` → `App\Domain\Blog\Services`, `suffix` → `Tests\Feature\Blog`, `none` → ignore `--domain` |
+| `primary` | The single root that `--namespace` rewrites |
+
+### Everything else
 
 | Key | Description | Default |
-|---|---|---|
-| `layers.*.enabled` | Enable/disable a given layer (model, repository, service, controller, requests, resource, policy, test) | `true` |
-| `layers.*.namespace` / `layers.*.path` | Namespace and output path per layer | Laravel default conventions |
-| `primary_key.strategy` | `increment`, `uuid`, or `ulid` | `ulid` |
-| `tenancy.enabled` / `tenancy.driver` | Adapt generated Model/Repository for a tenant-scoped app (`stancl` or `spatie`) | `false` |
-| `wrap_repository_calls` | Wrap generated Repository methods in try/catch with `Log::error()` before rethrowing (uses `repository-with-logging` stub instead of `repository`) | `false` |
-| `log_path` | Deprecated single-run log path, kept for backward compatibility | `storage/app/make-pattern/last-run.json` |
+| --- | --- | --- |
+| `layers.*.enabled` | Generate this layer or not | `true` |
+| `layers.*.namespace` | PSR-4 namespace; the directory is derived from it | Laravel conventions |
+| `layers.*.stub` | Stub name | per layer |
+| `layers.*.suffix` | Appended to the entity name to form the class name | per layer |
+| `primary_key.strategy` | `ulid`, `uuid` or `increment` — drives the model traits, the migration column **and** the `$id` type hints | `ulid` |
+| `tenancy.enabled` / `tenancy.driver` | Adds the driver's trait to the model. Drivers are declarable in `tenancy.drivers` | `false` / `stancl` |
+| `wrap_repository_calls` | Wrap repository writes in try/catch + `Log::error()`, rethrowing. Uses the `repository-with-logging` stub | `false` |
+| `policies.enforce_in_controller` | Controller calls `Gate::authorize()` in every action. Uses the `controller-authorized` stub | `true` |
+| `provider.enabled` | Maintain `PatternServiceProvider` | `true` |
+| `provider.class` | Its fully qualified name | `App\Providers\PatternServiceProvider` |
+| `provider.auto_register` | Add it to `bootstrap/providers.php` | `true` |
+| `routes.enabled` / `routes.file` | Register a resource route for the controller | `true` / `routes/api.php` |
+| `routes.method` | `apiResource` or `resource` | `apiResource` |
+| `routes.middleware` | e.g. `['auth:sanctum']` | `[]` |
+| `user_model` | Imported by the generated policy; `null` for no type hint | `App\Models\User` |
+| `base_controller` | Extended by the generated controller; `null` to extend nothing | `App\Http\Controllers\Controller` |
+| `history.path` / `history.backups` / `history.keep` | Where runs and backups are stored, and how many to keep | `storage/app/make-pattern/…`, `50` |
 
-This is what makes the generator portable across projects and teams rather than tied to one codebase's conventions.
+## Overriding the stubs
 
-## Generation history & rollback
+```bash
+php artisan vendor:publish --tag=make-pattern-stubs
+```
 
-Every run is recorded in an append-only audit log (`storage/app/make-pattern/history.json`):
+A published stub always wins over the packaged one, so you can override a single layer without touching the rest.
+
+Every stub receives:
+
+| Placeholder | Example |
+| --- | --- |
+| `{{ namespace }}`, `{{ class }}` | `App\Services`, `PostService` |
+| `{{ entity }}`, `{{ entityVariable }}`, `{{ entitySnake }}` | `Post`, `post`, `post` |
+| `{{ entityTable }}`, `{{ routeUri }}` | `posts`, `posts` |
+| `{{ idType }}` | `string` or `int`, from the primary key strategy |
+| `{{ <layer>Fqcn }}`, `{{ <layer>Class }}`, `{{ <layer>Namespace }}` | `{{ repositoryInterfaceFqcn }}` → `App\Repositories\Contracts\PostRepositoryInterface` |
+
+Layer placeholders are generated from the config, so a layer you add yourself gets its own set automatically. Cross-layer references are built from the *resolved* targets, which is why a stub still imports the right class under `--domain`.
+
+Feature flags select a stub variant before falling back to the base name, so publishing `repository-with-logging.stub` or `controller-authorized.stub` overrides just that variant.
+
+## History, undo and backups
+
+Every run is recorded in `storage/app/make-pattern/history.json`:
 
 ```bash
 php artisan make:pattern:history
+php artisan make:pattern:history --id=01ARZ3NDEKTSV4RRFFQ69G5FAV   # file-by-file
 ```
 
+```text
++----------------------------+---------+--------+------------------+-------+
+| ID                         | Entity  | Domain | Date             | Files |
++----------------------------+---------+--------+------------------+-------+
+| 01ARZ3NDEKTSV4RRFFQ69G5FAV | Comment | —      | 2026-08-30 09:15 | 15    |
+| 01ARZ3NDEK9G5FAVTSV4RRFFQ6 | Post    | Blog   | 2026-08-30 09:02 | 15    |
++----------------------------+---------+--------+------------------+-------+
 ```
-+----+------------+------------------+-------------+
-| ID | Entity     | Date             | Files       |
-+----+------------+------------------+-------------+
-| 3  | Comment    | 2026-08-03 09:15 | 9           |
-| 2  | Category   | 2026-08-03 09:10 | 9           |
-| 1  | Post       | 2026-08-03 09:02 | 9           |
-+----+------------+------------------+-------------+
-```
-
-Undo the last run:
 
 ```bash
-php artisan make:pattern:undo
+php artisan make:pattern:undo                # the last run
+php artisan make:pattern:undo --id=01ARZ...  # a specific run
 ```
 
-Or a specific run by id — files modified since generation are left untouched and reported rather than silently deleted:
+Undo is content-aware:
 
-```bash
-php artisan make:pattern:undo --id=01ARZ3NDEKTSV4RRFFQ69G5FAV
-```
+- a file the run **created** is deleted;
+- a file the run **overwrote** (`--force`) or **edited** (routes, provider) is **restored from its backup**, never deleted;
+- a file that changed after generation is left alone and reported. Pass `--force` to roll it back anyway.
+
+Backups live in `storage/app/make-pattern/backups/{run-id}/` and are pruned along with the history (`history.keep`, default 50 runs).
 
 ## Logging
 
-Technical/debug output goes to the standard `Log` facade, separate from the audit history above:
+Technical output goes to the standard `Log` facade, separate from the history above:
 
-- `info` — start and end of a generation (entity, layers, run id, file count)
-- `warning` — missing stub, or a file skipped because it already exists (use `--force`)
-- `error` — an exception during file write (message + stack trace), followed by a clean stop
+- `info` — start and end of a generation
+- `warning` — a skipped file, a missing marker
+- `error` — an exception, followed by an automatic rollback of that run
 
-By default these use the app's default log channel. To keep generator noise out of `laravel.log`, define a dedicated channel in your app's `config/logging.php`:
+To keep generator noise out of `laravel.log`, define a `make-pattern` channel in `config/logging.php`; the package picks it up automatically.
 
 ```php
 'channels' => [
@@ -219,8 +298,6 @@ By default these use the app's default log channel. To keep generator noise out 
 ],
 ```
 
-The package uses `make-pattern` automatically when that channel is defined.
-
 ## Testing
 
 ```bash
@@ -229,9 +306,19 @@ composer test
 
 Tests run against [Orchestra Testbench](https://github.com/orchestral/testbench), so no full Laravel app is needed.
 
+## Upgrading from 0.2
+
+Version 0.3 is a breaking release.
+
+- **Re-publish your config** (`vendor:publish --tag=make-pattern-config --force`). Layers now declare a `namespace` and the directory is derived from it; `layers.*.path` is only used by layers without a namespace, like `migration`.
+- **Re-publish your stubs** if you had published them. The `{{ domainNamespace }}` and `{{ rootNamespace }}` placeholders are gone, replaced by the per-layer `{{ <layer>Fqcn }}` set.
+- `log_path` is replaced by `history.path`. The old key is still honoured if present.
+- `primary_key.strategy` and `tenancy.*` were documented but not implemented in 0.2. They now work — check that the defaults match what your 0.2 code actually generated (`ulid`).
+- Older history entries are still readable, but they carry no backups, so undoing a pre-0.3 run can only delete.
+
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a history of changes.
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 
