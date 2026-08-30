@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -15,6 +22,10 @@ jobs:
         php: ['8.2', '8.3', '8.4']
         laravel: ['11.*', '12.*', '13.*']
         include:
+          # Laravel 11 is past its security-fix window, so every 11.x release
+          # carries an open advisory and Composer refuses to install any of
+          # them. The policy.advisories.block=false config in composer.json is
+          # what keeps this job resolvable — do not remove it.
           - laravel: '11.*'
             testbench: '9.*'
           - laravel: '12.*'
@@ -22,6 +33,7 @@ jobs:
           - laravel: '13.*'
             testbench: '11.*'
         exclude:
+          # Laravel 13 requires PHP 8.3+
           - php: '8.2'
             laravel: '13.*'
 
@@ -29,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -39,18 +51,27 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
+      - name: Validate composer.json
+        run: composer validate --strict --no-check-lock
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
         with:
-          path: vendor
-          key: ${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-${{ hashFiles('**/composer.json') }}
+          # The download cache, not vendor/: the feature tests write into
+          # vendor/orchestra/testbench-core, so a restored vendor/ is not
+          # something we want to reuse across runs.
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
           restore-keys: |
-            ${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
+            composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
+            composer-${{ runner.os }}-php${{ matrix.php }}-
 
       - name: Install dependencies
         run: |
-          composer require "illuminate/support:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update --with-all-dependencies
-          composer update --prefer-dist --no-interaction --no-progress
+          composer require --no-interaction --no-update --with-all-dependencies \
+            "illuminate/support:${{ matrix.laravel }}" \
+            "orchestra/testbench:${{ matrix.testbench }}"
+          composer update --prefer-dist --prefer-stable --no-interaction --no-progress
 
       - name: Run test suite
         run: composer test

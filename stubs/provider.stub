@@ -1,0 +1,47 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+
+class {{ class }} extends ServiceProvider
+{
+    /**
+     * Repository interface => implementation.
+     *
+     * Maintained by make:pattern: new entries are inserted above the marker
+     * comment. Everything else in this file is yours to edit.
+     *
+     * @var array<class-string, class-string>
+     */
+    protected array $repositories = [
+        // make-pattern:repositories
+    ];
+
+    /**
+     * Model => policy.
+     *
+     * Registered explicitly so authorization keeps working when --domain moves
+     * a model out of App\Models, where auto-discovery would no longer find it.
+     *
+     * @var array<class-string, class-string>
+     */
+    protected array $policies = [
+        // make-pattern:policies
+    ];
+
+    public function register(): void
+    {
+        foreach ($this->repositories as $interface => $implementation) {
+            $this->app->bind($interface, $implementation);
+        }
+    }
+
+    public function boot(): void
+    {
+        foreach ($this->policies as $model => $policy) {
+            Gate::policy($model, $policy);
+        }
+    }
+}

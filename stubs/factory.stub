@@ -1,0 +1,21 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelFqcn }};
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<{{ entity }}>
+ */
+class {{ class }} extends Factory
+{
+    protected $model = {{ entity }}::class;
+
+    public function definition(): array
+    {
+        return [
+            //
+        ];
+    }
+}

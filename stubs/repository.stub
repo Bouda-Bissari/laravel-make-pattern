@@ -2,27 +2,31 @@
 
 namespace {{ namespace }};
 
-use {{ modelNamespace }}\{{ entity }};
-use {{ namespace }}\Contracts\{{ entity }}RepositoryInterface;
+use {{ modelFqcn }};
+use {{ repositoryInterfaceFqcn }};
+use Illuminate\Database\Eloquent\Collection;
 
-class {{ class }} implements {{ entity }}RepositoryInterface
+class {{ class }} implements {{ repositoryInterfaceClass }}
 {
-    public function all()
+    /**
+     * @return Collection<int, {{ entity }}>
+     */
+    public function all(): Collection
     {
-        return {{ entity }}::all();
+        return {{ entity }}::query()->get();
     }
 
-    public function find(string $id)
+    public function find({{ idType }} $id): {{ entity }}
     {
-        return {{ entity }}::findOrFail($id);
+        return {{ entity }}::query()->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function create(array $data): {{ entity }}
     {
-        return {{ entity }}::create($data);
+        return {{ entity }}::query()->create($data);
     }
 
-    public function update(string $id, array $data)
+    public function update({{ idType }} $id, array $data): {{ entity }}
     {
         ${{ entityVariable }} = $this->find($id);
         ${{ entityVariable }}->update($data);
@@ -30,7 +34,7 @@ class {{ class }} implements {{ entity }}RepositoryInterface
         return ${{ entityVariable }};
     }
 
-    public function delete(string $id): bool
+    public function delete({{ idType }} $id): bool
     {
         return (bool) $this->find($id)->delete();
     }

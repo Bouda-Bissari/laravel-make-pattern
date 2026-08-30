@@ -2,15 +2,21 @@
 
 namespace {{ namespace }};
 
+use {{ modelFqcn }};
+use Illuminate\Database\Eloquent\Collection;
+
 interface {{ class }}
 {
-    public function all();
+    /**
+     * @return Collection<int, {{ entity }}>
+     */
+    public function all(): Collection;
 
-    public function find(string $id);
+    public function find({{ idType }} $id): {{ entity }};
 
-    public function create(array $data);
+    public function create(array $data): {{ entity }};
 
-    public function update(string $id, array $data);
+    public function update({{ idType }} $id, array $data): {{ entity }};
 
-    public function delete(string $id): bool;
+    public function delete({{ idType }} $id): bool;
 }

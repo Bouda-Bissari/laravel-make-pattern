@@ -2,6 +2,9 @@
 
 namespace {{ namespace }};
 
+use {{ modelFqcn }};
+use {{ repositoryInterfaceFqcn }};
+use {{ serviceFqcn }};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -9,10 +12,31 @@ class {{ class }} extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_can_list_{{ entityTable }}(): void
+    public function test_the_{{ entitySnake }}_service_resolves_from_the_container(): void
     {
-        $response = $this->getJson('/api/{{ entityTable }}');
+        $this->assertInstanceOf(
+            {{ serviceClass }}::class,
+            app({{ serviceClass }}::class),
+        );
+    }
 
-        $response->assertStatus(200);
+    public function test_it_creates_and_finds_a_{{ entitySnake }}(): void
+    {
+        ${{ entityVariable }} = {{ entity }}::factory()->create();
+
+        $found = app({{ repositoryInterfaceClass }}::class)->find(${{ entityVariable }}->getKey());
+
+        $this->assertTrue(${{ entityVariable }}->is($found));
+    }
+
+    public function test_it_deletes_a_{{ entitySnake }}(): void
+    {
+        ${{ entityVariable }} = {{ entity }}::factory()->create();
+
+        app({{ serviceClass }}::class)->delete(${{ entityVariable }}->getKey());
+
+        $this->assertDatabaseMissing('{{ entityTable }}', [
+            ${{ entityVariable }}->getKeyName() => ${{ entityVariable }}->getKey(),
+        ]);
     }
 }
