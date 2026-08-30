@@ -3,3 +3,8 @@ composer.lock
 .phpunit.result.cache
 /build/
 RELEASE_NOTES.md
+POSTS.md
+/blog/
+.claude/
+CLAUDE.md
+AGENTS.md
