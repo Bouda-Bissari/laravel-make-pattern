@@ -2,32 +2,32 @@
 
 namespace {{ namespace }};
 
-use {{ modelNamespace }}\{{ entity }};
-use {{ modelNamespace }}\User;
+use {{ modelFqcn }};
+{{ userModelImport }}
 
 class {{ class }}
 {
-    public function viewAny(User $user): bool
+    public function viewAny({{ userModelHint }} $user): bool
     {
         return true;
     }
 
-    public function view(User $user, {{ entity }} ${{ entityVariable }}): bool
+    public function view({{ userModelHint }} $user, {{ entity }} ${{ entityVariable }}): bool
     {
         return true;
     }
 
-    public function create(User $user): bool
+    public function create({{ userModelHint }} $user): bool
     {
         return true;
     }
 
-    public function update(User $user, {{ entity }} ${{ entityVariable }}): bool
+    public function update({{ userModelHint }} $user, {{ entity }} ${{ entityVariable }}): bool
     {
         return true;
     }
 
-    public function delete(User $user, {{ entity }} ${{ entityVariable }}): bool
+    public function delete({{ userModelHint }} $user, {{ entity }} ${{ entityVariable }}): bool
     {
         return true;
     }

@@ -2,38 +2,41 @@
 
 namespace {{ namespace }};
 
-use {{ modelNamespace }}\{{ entity }};
-use {{ namespace }}\Contracts\{{ entity }}RepositoryInterface;
+use {{ modelFqcn }};
+use {{ repositoryInterfaceFqcn }};
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
-class {{ class }} implements {{ entity }}RepositoryInterface
+class {{ class }} implements {{ repositoryInterfaceClass }}
 {
-    public function all()
+    /**
+     * @return Collection<int, {{ entity }}>
+     */
+    public function all(): Collection
     {
-        return {{ entity }}::all();
+        return {{ entity }}::query()->get();
     }
 
-    public function find(string $id)
+    public function find({{ idType }} $id): {{ entity }}
     {
-        return {{ entity }}::findOrFail($id);
+        return {{ entity }}::query()->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function create(array $data): {{ entity }}
     {
         try {
-            return {{ entity }}::create($data);
+            return {{ entity }}::query()->create($data);
         } catch (\Throwable $e) {
-            Log::error('{{ entity }}Repository::create failed', [
+            Log::error('{{ class }}::create failed', [
                 'exception' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'data' => $data,
             ]);
 
             throw $e;
         }
     }
 
-    public function update(string $id, array $data)
+    public function update({{ idType }} $id, array $data): {{ entity }}
     {
         try {
             ${{ entityVariable }} = $this->find($id);
@@ -41,23 +44,22 @@ class {{ class }} implements {{ entity }}RepositoryInterface
 
             return ${{ entityVariable }};
         } catch (\Throwable $e) {
-            Log::error('{{ entity }}Repository::update failed', [
+            Log::error('{{ class }}::update failed', [
                 'exception' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'id' => $id,
-                'data' => $data,
             ]);
 
             throw $e;
         }
     }
 
-    public function delete(string $id): bool
+    public function delete({{ idType }} $id): bool
     {
         try {
             return (bool) $this->find($id)->delete();
         } catch (\Throwable $e) {
-            Log::error('{{ entity }}Repository::delete failed', [
+            Log::error('{{ class }}::delete failed', [
                 'exception' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'id' => $id,

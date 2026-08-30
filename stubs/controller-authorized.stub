@@ -2,6 +2,7 @@
 
 namespace {{ namespace }};
 
+use {{ modelFqcn }};
 use {{ storeRequestFqcn }};
 use {{ updateRequestFqcn }};
 use {{ resourceFqcn }};
@@ -9,6 +10,7 @@ use {{ serviceFqcn }};
 {{ baseControllerImport }}
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class {{ class }}{{ controllerExtends }}
 {
@@ -19,11 +21,15 @@ class {{ class }}{{ controllerExtends }}
 
     public function index(): AnonymousResourceCollection
     {
+        Gate::authorize('viewAny', {{ entity }}::class);
+
         return {{ resourceClass }}::collection($this->{{ entityVariable }}Service->list());
     }
 
     public function store({{ storeRequestClass }} $request): {{ resourceClass }}
     {
+        Gate::authorize('create', {{ entity }}::class);
+
         return new {{ resourceClass }}(
             $this->{{ entityVariable }}Service->create($request->validated()),
         );
@@ -31,11 +37,17 @@ class {{ class }}{{ controllerExtends }}
 
     public function show({{ idType }} $id): {{ resourceClass }}
     {
-        return new {{ resourceClass }}($this->{{ entityVariable }}Service->find($id));
+        ${{ entityVariable }} = $this->{{ entityVariable }}Service->find($id);
+
+        Gate::authorize('view', ${{ entityVariable }});
+
+        return new {{ resourceClass }}(${{ entityVariable }});
     }
 
     public function update({{ updateRequestClass }} $request, {{ idType }} $id): {{ resourceClass }}
     {
+        Gate::authorize('update', $this->{{ entityVariable }}Service->find($id));
+
         return new {{ resourceClass }}(
             $this->{{ entityVariable }}Service->update($id, $request->validated()),
         );
@@ -43,6 +55,8 @@ class {{ class }}{{ controllerExtends }}
 
     public function destroy({{ idType }} $id): JsonResponse
     {
+        Gate::authorize('delete', $this->{{ entityVariable }}Service->find($id));
+
         $this->{{ entityVariable }}Service->delete($id);
 
         return response()->json(status: 204);

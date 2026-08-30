@@ -2,36 +2,41 @@
 
 namespace {{ namespace }};
 
-use {{ domainNamespace }}\Repositories\Contracts\{{ entity }}RepositoryInterface;
+use {{ modelFqcn }};
+use {{ repositoryInterfaceFqcn }};
+use Illuminate\Database\Eloquent\Collection;
 
 class {{ class }}
 {
     public function __construct(
-        protected {{ entity }}RepositoryInterface ${{ entityVariable }}Repository
+        protected {{ repositoryInterfaceClass }} ${{ entityVariable }}Repository,
     ) {
     }
 
-    public function list()
+    /**
+     * @return Collection<int, {{ entity }}>
+     */
+    public function list(): Collection
     {
         return $this->{{ entityVariable }}Repository->all();
     }
 
-    public function find(string $id)
+    public function find({{ idType }} $id): {{ entity }}
     {
         return $this->{{ entityVariable }}Repository->find($id);
     }
 
-    public function create(array $data)
+    public function create(array $data): {{ entity }}
     {
         return $this->{{ entityVariable }}Repository->create($data);
     }
 
-    public function update(string $id, array $data)
+    public function update({{ idType }} $id, array $data): {{ entity }}
     {
         return $this->{{ entityVariable }}Repository->update($id, $data);
     }
 
-    public function delete(string $id): bool
+    public function delete({{ idType }} $id): bool
     {
         return $this->{{ entityVariable }}Repository->delete($id);
     }

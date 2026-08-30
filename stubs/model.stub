@@ -2,16 +2,20 @@
 
 namespace {{ namespace }};
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use Illuminate\Database\Eloquent\Model;
+{{ modelImports }}
 
 class {{ class }} extends Model
 {
-    use HasUlids;
+    use HasFactory{{ modelTraits }};
 
     protected $table = '{{ entityTable }}';
 
     protected $fillable = [
         //
     ];
+
+    protected $casts = [
+        //
+    ];
+{{ modelFactoryMethod }}
 }
